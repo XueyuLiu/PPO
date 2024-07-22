@@ -25,14 +25,8 @@ Wen Zheng<sup>1</sup>
 
 ## Overview
 
-[![Watch the video](Display/Display.gif)](https://youtu.be/LKievqcEsJA)
-[![Video Demo](Display/Display.gif)](https://youtu.be/LKievqcEsJA)
+[![Watch the video](Display/Video.gif)](https://youtu.be/LKievqcEsJA)
 
-
-<iframe width="560" height="315" src="https://youtu.be/LKievqcEsJA" frameborder="0" allowfullscreen></iframe>
-<p align="center">
-<img width="800" alt="eg" src="Display/Display.gif">
-</p>
 
 ##  Description
 In the field of medical imaging, AI-driven technologies have historically faced limitations due to the high costs and complexities associated with training, especially in image segmentation. To address these challenges, we present Segment Any Tissue (SAT), an innovative training-free framework designed to automatically prompt the class-agnostic visual foundation model for the segmentation of medical images with exceptional efficiency. SAT leverages the robust feature matching capabilities of the pretrained foundation model to generate initial prompt points. It then introduces a series of novel automatic prompt engineering techniques across feature and physical spaces to optimize the prompt scheme. Finally, SAT utilizes a class-agnostic foundation segmentation model with the generated prompt scheme to achieve accurate segmentation results. Our method has been validated on four public datasets ranging from macro to micro scales and two private datasets. Results demonstrate superior performance compared to existing one-shot methods, requiring only one labeled reference image in a training-free manner. Ablation experiments further confirm the effectiveness of each component of the automatic prompt engineering. In summary, SAT introduces a unique automatic prompt framework that enables robust, domain-independent, universal segmentation performance without the need for training. This significantly advances the automatic prompting of foundation segmentation models for medical images. SAT introduces a brand-new paradigm for medical image segmentation, laying a solid foundation for the clinical application of intelligent medicine.
