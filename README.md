@@ -25,7 +25,12 @@ Wen Zheng<sup>1</sup>
 
 ## Overview
 
-[![Watch the video](Display/Video.gif)](https://youtu.be/LKievqcEsJA)
+
+<div align="center">
+  <a href="https://youtu.be/LKievqcEsJA">
+    <img src="Display/Video.gif" alt="Video Demo">
+  </a>
+</div>
 
 
 ##  Description
