@@ -14,9 +14,6 @@ Wen Zheng<sup>1</sup>
 
 <sup>1</sup>[Taiyuan University of Technology](https://www.tyut.edu.cn/), &nbsp;
 <sup>2</sup>[University of Science and Technology of China](https://www.ustc.edu.cn/), &nbsp;
-<sup>3</sup>[The Second Affiliated Hospital of Shanxi Medical University](https://www.sydey.com/)，&nbsp;
-<sup>4</sup>[Shanxi Provincial People's Hospital](https://www.sxsrmyy.com/)
-
 </div>
 
 ## Overview
