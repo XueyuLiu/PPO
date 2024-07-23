@@ -3,9 +3,9 @@
 <h1> GPOA: Enhancing Point Prompt Distribution via Reinforcement Learning-based Heterogeneous Graph Optimization for Segment Anything </h1>
 
 [Xueyu Liu]([https://scholar.google.com/citations?user=9JcQ2hwAAAAJ&hl=en](https://scholar.google.com.hk/citations?user=jeatLqIAAAAJ&hl=zh-CN))<sup>1</sup>, &nbsp; 
+Rui Wang<sup>2</sup>, &nbsp; 
 Guangze Shi<sup>1</sup>, &nbsp; 
 Yexin Lai<sup>1</sup>, &nbsp; 
-Rui Wang<sup>2</sup>, &nbsp; 
 Jianan Zhang<sup>1</sup>, &nbsp; 
 Ming Li<sup>1</sup>, &nbsp;
 Yonfei Wu<sup>1*</sup>, &nbsp;
