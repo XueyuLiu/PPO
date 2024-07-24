@@ -2,7 +2,7 @@
 
 <h1> GPOA: Enhancing Point Prompt Distribution via Reinforcement Learning-based Heterogeneous Graph Optimization for Segment Anything </h1>
 
-
+</div>
 
 ## Overview
 
