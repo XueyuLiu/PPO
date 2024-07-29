@@ -20,7 +20,7 @@
 - PyTorch 2.0.0
 
 ## TODO
-- [ ] Release code
+- [ ] Release code guideline
 
 
 ## Acknowledgement
