@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1> GPOA: Enhancing Point Prompt Distribution via Reinforcement Learning-based Heterogeneous Graph Optimization for Segment Anything </h1>
+<h1> Plug-and-Play PPO: An Adaptive Point Prompt Optimizer Making SAM Greater </h1>
 
 </div>
 
@@ -14,7 +14,7 @@
 
 
 ##  Description
-Powered by extensive curated training data, the Segment Anything Model (SAM) has demonstrated impressive generalization capabilities in open-world scenarios with the guidance of prompts. However, SAM is class-agnostic and heavily relies on user-provided prompts to segment objects of interest, making the quality of segmentation results highly dependent on the quality of these prompts. We propose a novel Graph-based Prompt Optimization Agent (GPOA), designed to enhance point prompt distribution via deep reinforcement learning (DRL)-based heterogeneous graph optimization. Anchored by an agent, GPOA enables the generality of the SAM model across diverse downstream tasks with a training-free paradigm. Specifically, GPOA constructs a dual-space heterogeneous graph by leveraging the robust feature matching capabilities of the foundational pre-trained model, creating an internal feature and a physical distance matrix. It then employs a DRL policy network to iteratively refine the distribution of prompt points, optimizing segmentation predictions. In conclusion, GPOA effectively enhances SAM's segmentation performance through optimized prompt distributions, demonstrating potential for broader application in various segmentation tasks, and providing a promising solution for any point prompt optimization.
+Powered by extensive curated training data, the Segment Anything Model (SAM) demonstrates impressive generalization capabilities in open-world scenarios, effectively guided by user-provided prompts.However, the class-agnostic characteristic of SAM renders its segmentation accuracy highly dependent on prompt quality. In this paper, we propose a novel Plug-and-Play dual-space Point Prompt Optimizer (PPO) designed to enhance prompt distribution through deep reinforcement learning (DRL)-based heterogeneous graph optimization. PPO optimizes initial prompts for any task without requiring additional training, thereby improving SAM’s downstream segmentation performance. Specifically, PPO constructs a dual-space heterogeneous graph, leveraging the robust feature-matching capabilities of a foundational pre-trained model to create internal feature and physical distance matrices. A DRL policy network iteratively refines the distribution of prompt points, optimizing segmentation predictions. In conclusion, PPO redefines the prompt optimization problem as a heterogeneous graph optimization task, using DRL to construct an effective, plug-and-play prompt optimizer. This approach holds potential for broader applications across diverse segmentation tasks and provides a promising solution for point prompt optimization.
 
 ## Usage 
 ### Setup 
