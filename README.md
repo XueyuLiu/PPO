@@ -18,10 +18,9 @@ Powered by extensive curated training data, the Segment Anything Model (SAM) dem
 
 ## Usage 
 ### Setup 
-
-- Cuda 12.0
-- Python 3.9.18
-- PyTorch 2.0.0
+```
+pip install -r requirements.txt
+```
 
 
 ### Datasets
@@ -34,10 +33,6 @@ Powered by extensive curated training data, the Segment Anything Model (SAM) dem
     │   ├── optimized_indices    # optimized prompt indices
 
 
-## Setup 
-- Cuda 12.0
-- Python 3.9.18
-- PyTorch 2.0.0
 
 ### Generate initial prompt
 ```
@@ -49,15 +44,16 @@ python Generate_initial_prompts.py
 python train_GPOA.py
 ```
 
-### Optimize initial prompt
+### Optimize PPO with feature matching
 ```
-python test_GPOA.py
+python main_FM.py
 ```
-
-### Segmentation 
-```
-python main_seg.py
-```
+### Optimization results for different datasets
+<div align="center">
+  <a href="https://youtu.be/LKievqcEsJA">
+    <img src="Display/Video.gif" alt="Video Demo">
+  </a>
+</div>
 
 
 
