@@ -65,6 +65,8 @@ def process_image(image, ps_points, ng_points, sam, max_contour=False):
     predictor = SamPredictor(sam)
     predictor.set_image(image)
     input_point, input_label = prepare_input(ps_points, ng_points)
+    #print(input_point)
+    #print(input_label)
     masks, _, _ = predictor.predict(point_coords=input_point, point_labels=input_label, multimask_output=False)
     mask_image = (masks[0] * 255).astype(np.uint8)
     if max_contour:

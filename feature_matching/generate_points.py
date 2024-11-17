@@ -138,6 +138,7 @@ def forward_matching(images_inner, index, device, dino, size):
         features_dict = dino.forward_features(imgs_tensor)
         features = features_dict['x_norm_patchtokens']
     fore_index = torch.tensor(index)
+    fore_index  = fore_index.long()
     distances = torch.cdist(features[0][fore_index].squeeze(1), features[1])
     min_values, min_indices = distances.min(dim=1)
 

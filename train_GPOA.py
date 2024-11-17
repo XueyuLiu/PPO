@@ -17,7 +17,7 @@ def main():
     """Main function to train the Q-learning agent."""
     global device, image_size
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    image_size = 560
+    image_size = SIZE
 
     base_dir = ''
     files = [f for f in os.listdir(base_dir) if os.path.isfile(os.path.join(base_dir, f))]

@@ -82,7 +82,7 @@ def test_agent(agent, test_base_dir, test_file_prefixes, image_size, device, out
         print(f"Test with prefix {prefix} completed, Total Reward: {total_reward}")
         print(f"Elapsed Time: {timedelta(seconds=int(elapsed_time))}")
 
-def optimize_nodes(agent, pos_indices, neg_indices, features, max_steps, device):
+def optimize_nodes(agent, pos_indices, neg_indices, features, max_steps, device,image_size):
     """Optimize node positions using the Q-learning agent."""
     pos_indices = torch.unique(pos_indices).to(device)
     neg_indices = torch.unique(neg_indices).to(device)
@@ -124,47 +124,3 @@ def optimize_nodes(agent, pos_indices, neg_indices, features, max_steps, device)
     optimized_pos_indices = torch.tensor([node for node in agent.env.pos_nodes])
     optimized_neg_indices = torch.tensor([node for node in agent.env.neg_nodes])
     return optimized_pos_indices, optimized_neg_indices
-
-def main():
-    """Main function to execute the testing of the Q-learning agent."""
-    global device, image_size
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    image_size = 560
-
-    # Load saved model weights
-    q_table_path = ''  # Specify the path to your saved Q-table
-    test_indices_dir = ''  # Specify the directory containing test indices
-    result_dir = ''  # Specify the directory to save the results
-    max_steps = 100
-    env = None  # Dummy initialization, it will be set during testing
-    agent = QLearningAgent(env)
-    agent.q_table = torch.load(q_table_path)
-    os.makedirs(result_dir, exist_ok=True)
-
-    test_feature_list = os.listdir(test_indices_dir)
-
-    prefix = []
-    for file_name in os.listdir(test_indices_dir):
-        prefix.append(file_name.split('_')[0] + '_' + file_name.split('_')[1])
-    prefix = list(set(prefix))
-
-    for name in tqdm(prefix):
-        test_feature_file = os.path.join(test_indices_dir, name + '_features.pt')
-        test_pos_file = os.path.join(test_indices_dir, name + '_initial_indices_pos.pt')
-        test_neg_file = os.path.join(test_indices_dir, name + '_initial_indices_neg.pt')
-
-        if not (os.path.exists(test_feature_file) and os.path.exists(test_pos_file) and os.path.exists(test_neg_file)):
-            print("Required test files not found, skipping the test.")
-            return
-
-        test_features = torch.load(test_feature_file).to(device)
-        test_pos_indices = torch.load(test_pos_file).to(device)
-        test_neg_indices = torch.load(test_neg_file).to(device)
-
-        optimized_pos_indices, optimized_neg_indices = optimize_nodes(agent, test_pos_indices, test_neg_indices, test_features, max_steps, device)
-
-        torch.save(optimized_pos_indices, os.path.join(result_dir, name + '_indices_pos.pt'))
-        torch.save(optimized_neg_indices, os.path.join(result_dir, name + '_indices_neg.pt'))
-
-if __name__ == "__main__":
-    main()
