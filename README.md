@@ -50,9 +50,7 @@ python main_FM.py
 ```
 ### Optimization results for different datasets
 <div align="center">
-  <a href="https://youtu.be/LKievqcEsJA">
-    <img src="Display/Video.gif" alt="Video Demo">
-  </a>
+  <img width="1000" alt="ablation" src="Display/Results.png">
 </div>
 
 
