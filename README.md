@@ -18,6 +18,8 @@ Powered by extensive curated training data, the Segment Anything Model (SAM) dem
 
 ## Usage 
 ### Setup 
+- Cuda 12.7
+- Python 3.9.20
 ```
 pip install -r requirements.txt
 ```
