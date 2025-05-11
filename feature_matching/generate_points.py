@@ -1,11 +1,6 @@
-import os
-import sys
 import numpy as np
 import torch
 import torchvision.transforms as T
-from PIL import Image
-from tqdm import tqdm
-from sklearn.cluster import KMeans
 from . import hubconf
 
 def find_foreground_patches(mask_np, size):
@@ -24,6 +19,10 @@ def find_foreground_patches(mask_np, size):
     """
     fore_patchs = []
     back_patchs = []
+    
+    # 确保 mask_np 是正确的形状 (H, W, 3)
+    if mask_np.shape[-1] == 4:  # 如果是 RGBA 格式
+        mask_np = mask_np[..., :3]  # 只保留 RGB 通道
 
     for i in range(0, mask_np.shape[0] - 14, 14):
         for j in range(0, mask_np.shape[1] - 14, 14):
@@ -223,7 +222,7 @@ def generate(mask, image_inner, device, dino, size):
     mask_np = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
     fore_patchs, fore_index, back_patchs, back_index = find_foreground_patches(mask_np, size)
 
-    images_inner, features, initial_indices = forward_matching(image_inner, fore_index, device, dino, size)
+    images_inner,  features, initial_indices = forward_matching(image_inner, fore_index, device, dino, size)
     images_inner_back, features_back, initial_indices_back = forward_matching(image_inner, back_index, device, dino, size)
 
     return features, initial_indices, initial_indices_back

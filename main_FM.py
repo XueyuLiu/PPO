@@ -5,27 +5,39 @@ import warnings
 import torch
 from tqdm import tqdm
 from PIL import Image
-from segment_anything import sam_model_registry, SamPredictor
-from segmenter.segment import process_image, loading_seg, seg_main
-from feature_matching.generate_points import generate, loading_dino, distance_calculate
-from test_GPOA import test_agent, optimize_nodes
-from utils import generate_points, GraphOptimizationEnv, QLearningAgent, calculate_distances, convert_to_edges
+
+# Set paths for feature matching and segmentation modules
+generate_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'feature_matching'))
+segment_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'segmenter'))
+sys.path.append(segment_path)
+sys.path.append(generate_path)
+
+# from segment_anything import sam_model_registry, SamPredictor
+from segmenter.segment import loading_seg, seg_main
+from feature_matching.generate_points import generate, loading_dino
+from test_GPOA import optimize_nodes
+from utils import generate_points, GraphOptimizationEnv, QLearningAgent
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")
 
-# Set device (GPU if available, otherwise CPU)
+SIZE = 560
+
+DATASET = ''
+CATAGORY = ''
+
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 IMAGE_SIZE = SIZE
 
 # Define paths
 BASE_DIR = os.path.dirname(__file__)
-DATA_DIR = os.path.join(BASE_DIR, 'data', 'DATA_NAME')
-REFERENCE_IMAGE_DIR = os.path.join(DATA_DIR, 'references_images')
-MASK_DIR = os.path.join(DATA_DIR, 'references_masks')
-Q_TABLE_PATH = os.path.join(BASE_DIR, 'MODEL_NAME')
-IMAGE_DIR = os.path.join(DATA_DIR, 'images')  # Path for test images
-SAVE_DIR = os.path.join(BASE_DIR, 'results')
+DATA_DIR = os.path.join(BASE_DIR, 'dataset', DATASET, CATAGORY)
+REFERENCE_IMAGE_DIR = os.path.join(DATA_DIR, 'reference_images')
+MASK_DIR = os.path.join(DATA_DIR, 'reference_masks')
+Q_TABLE_PATH = os.path.join(BASE_DIR, 'model', 'best_q_table.pkl')
+IMAGE_DIR = os.path.join(DATA_DIR, 'target_images')  
+RESULTS_DIR = os.path.join(BASE_DIR, 'results', DATASET, CATAGORY)
+SAVE_DIR = os.path.join(RESULTS_DIR, 'masks')
 
 # Ensure the results directory exists
 os.makedirs(SAVE_DIR, exist_ok=True)
@@ -77,6 +89,7 @@ def process_single_image(agent, model_dino, model_seg, image_name, reference, ma
                 agent, pos_indices, neg_indices, features, max_steps=100, device=DEVICE, image_size=IMAGE_SIZE
             )
             end_time = time.time()
+            print(f"len(opt_pos_indices): {len(opt_pos_indices)}, len(opt_neg_indices): {len(opt_neg_indices)}")
             print(f"Time to optimize prompts: {end_time - start_time:.4f} seconds")
 
             # Generate points and perform segmentation
@@ -85,7 +98,7 @@ def process_single_image(agent, model_dino, model_seg, image_name, reference, ma
 
             # Save the resulting segmentation mask
             mask = Image.fromarray(mask)
-            mask.save(os.path.join(SAVE_DIR, f"{image_name}_mask.png"))
+            mask.save(os.path.join(SAVE_DIR, f"{image_name}"))
         else:
             print(f"Skipping {image_name}: No positive or negative indices found.")
     except Exception as e:
@@ -97,9 +110,9 @@ if __name__ == "__main__":
     model_seg, model_dino = load_models()
 
     # Initialize Q-learning agent
-    env = None  # Placeholder for the environment
+    env = GraphOptimizationEnv
     agent = QLearningAgent(env)
-    agent.q_table = torch.load(Q_TABLE_PATH)
+    agent.q_table = torch.load(Q_TABLE_PATH,weights_only=False)
 
     # Get reference image list
     reference_list = os.listdir(REFERENCE_IMAGE_DIR)

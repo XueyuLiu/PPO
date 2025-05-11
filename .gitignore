@@ -1,0 +1,9 @@
+.tmp.drivedownload
+.tmp.driveupload
+
+# dataset/*
+results/*
+train/*
+evaluation/*
+
+__pycache__/*

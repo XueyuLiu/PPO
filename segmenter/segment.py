@@ -16,12 +16,12 @@ def show_mask(mask, ax, random_color=False):
     mask_image = mask.reshape(h, w, 1) * color.reshape(1, 1, -1)
     ax.imshow(mask_image)
 
-def show_points(coords, labels, ax, marker_size=350):
+def show_points(coords, labels, ax, marker_size=300):
     """Display points on the image."""
     pos_points = coords[labels == 1]
     neg_points = coords[labels == 0]
-    ax.scatter(pos_points[:, 0], pos_points[:, 1], color='blue', marker='o', s=marker_size, edgecolor='white', linewidth=1.25)
-    ax.scatter(neg_points[:, 0], neg_points[:, 1], color='red', marker='o', s=marker_size, edgecolor='white', linewidth=1.25)
+    ax.scatter(pos_points[:, 0], pos_points[:, 1], color='#40e0d0', marker='o', s=marker_size,edgecolor='white',linewidth=1)
+    ax.scatter(neg_points[:, 0], neg_points[:, 1], color='pink', marker='o', s=marker_size,edgecolor='white',linewidth=1)
 
 def prepare_input(ps_points, ng_points):
     """Prepare input points and labels for the model."""
