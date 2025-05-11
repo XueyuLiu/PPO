@@ -39,10 +39,10 @@ pip install -r requirements.txt
 
 ### Generate initial prompt
 ```
-python Generate_initial_prompts.py
+python generate_initial_prompts.py
 ```
 
-### Train GPOA
+### Train PPO
 ```
 python train_GPOA.py
 ```
