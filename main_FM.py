@@ -15,8 +15,8 @@ sys.path.append(generate_path)
 # from segment_anything import sam_model_registry, SamPredictor
 from segmenter.segment import loading_seg, seg_main
 from feature_matching.generate_points import generate, loading_dino
-from test_GPOA import optimize_nodes
-from utils import generate_points, GraphOptimizationEnv, QLearningAgent
+from test_PPO import optimize_nodes
+from utils_test import generate_points, GraphOptimizationEnv, QLearningAgent
 
 # Ignore all warnings
 warnings.filterwarnings("ignore")

@@ -8,7 +8,7 @@ import cv2
 import warnings
 import matplotlib.pyplot as plt
 import json
-from utils import calculate_center_points
+from utils_test import calculate_center_points
 from config import *
 
 # Ignore all warnings

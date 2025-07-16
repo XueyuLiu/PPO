@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime
 from medpy.metric.binary import dc, hd95
-from utils import refine_mask
+from utils_test import refine_mask
 
 # Image configuration
 IMAGE_SIZE = 560
