@@ -1,23 +1,20 @@
+import os
 import torch
 import numpy as np
 from PIL import Image
 import cv2
 import networkx as nx
+import pandas as pd
 import random
 from collections import defaultdict, deque
-from config import *
+import time
+from datetime import timedelta
+
 
 def calculate_center_points(indices, size):
     """Calculate the center points based on indices for a given size."""
     center_points = []
-    
-    # Convert indices to numpy array depending on input type
-    if hasattr(indices, 'cpu'):  # Check if indices is a torch tensor
-        indices = indices.cpu().numpy()
-    elif isinstance(indices, list):
-        indices = np.array(indices)
-    else:
-        indices = np.asarray(indices)
+    indices = indices.cpu().numpy()
 
     for index in indices:
         row = index // (size // 14)
@@ -51,31 +48,6 @@ def normalize_distances(distances):
     min_distance = torch.min(distances)
     normalized_distances = (distances - min_distance) / (max_distance - min_distance)
     return normalized_distances
-
-
-def refine_mask(mask,threshold):
-
-    # Find contours in the mask image
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Sort contours by area in descending order
-    contours = sorted(contours, key=cv2.contourArea, reverse=True)
-
-    # Find the largest contour
-    largest_contour = contours[0]
-
-    # Calculate the minimum contour area that is 20% of the size of the largest contour
-    min_area = threshold * cv2.contourArea(largest_contour)
-
-    # Find contours that are at least 20% of the size of the largest contour
-    filtered_contours = [contour for contour in contours if cv2.contourArea(contour) >= min_area]
-
-    # Draw the contours on the resized mask image
-    contour_mask = np.zeros_like(mask)
-    cv2.drawContours(contour_mask, [largest_contour], -1, 255, -1)
-    cv2.drawContours(contour_mask, filtered_contours, -1, 255, -1)
-
-    return contour_mask
 
 def generate_points(positive_indices, negative_indices, image_size):
     """Generate positive and negative points mapped to original size."""
@@ -113,14 +85,14 @@ def calculate_distances(features, positive_indices, negative_indices, image_size
     return feature_positive_distances, feature_cross_distances, physical_positive_distances, physical_negative_distances, physical_cross_distances
 
 def draw_points_on_image(image, points, color, size):
-    """Draw points on the image with specified color and size"""
+    """Draw points on the image."""
     image = np.array(image)
     for point in points:
         cv2.circle(image, (point[0], point[1]), radius=size, color=color, thickness=-1)
     return image
 
 def convert_to_edges(start_nodes, end_nodes, weights):
-    """Convert node pairs to edges with corresponding weights"""
+    """Convert nodes to edges with weights."""
     assert weights.shape == (len(start_nodes), len(end_nodes)), "Weight matrix shape mismatch"
     start_nodes_expanded = start_nodes.unsqueeze(1).expand(-1, end_nodes.size(0))
     end_nodes_expanded = end_nodes.unsqueeze(0).expand(start_nodes.size(0), -1)
@@ -129,7 +101,7 @@ def convert_to_edges(start_nodes, end_nodes, weights):
     return edges_with_weights
 
 def average_edge_size(graph, weight_name):
-    """Calculate average edge weight for specified weight type"""
+    """Calculate the average edge size based on the specified weight."""
     edges = graph.edges(data=True)
     total_weight = sum(data[weight_name] for _, _, data in edges if weight_name in data)
     edge_count = sum(1 for _, _, data in edges if weight_name in data)
@@ -140,23 +112,18 @@ def average_edge_size(graph, weight_name):
 
 class GraphOptimizationEnv:
     def __init__(self, G, max_steps):
-        """Initialize graph optimization environment
-        Args:
-            G: Input graph
-            max_steps: Maximum steps allowed
-        """
+        """Initialize the graph optimization environment."""
         self.original_G = G.copy()
         self.G = G.copy()
         self.pos_nodes = [node for node, data in self.G.nodes(data=True) if data['category'] == 'pos']
         self.neg_nodes = [node for node, data in self.G.nodes(data=True) if data['category'] == 'neg']
-        self.min_nodes = 5  # Minimum nodes required
-        self.max_nodes = 20 # Maximum nodes allowed
+        self.min_nodes = 5
+        self.max_nodes = 20
         self.steps = 0
         self.max_steps = max_steps
         self.removed_nodes = set()
         self.reset()
 
-        # Store initial feature and physical distances
         self.previous_feature_pos_mean = np.mean(list(nx.get_edge_attributes(self.original_G, 'feature_pos').values()))
         self.previous_feature_cross_mean = np.mean(list(nx.get_edge_attributes(self.original_G, 'feature_cross').values()))
         self.previous_physical_pos_mean = np.mean(list(nx.get_edge_attributes(self.original_G, 'physical_pos').values()))
@@ -167,7 +134,7 @@ class GraphOptimizationEnv:
         self.previous_neg_num = 0
 
     def reset(self):
-        """Reset environment to initial state"""
+        """Reset the environment."""
         self.G = self.original_G.copy()
         self.removed_nodes = set(self.G.nodes())
         self.G.clear()
@@ -176,16 +143,11 @@ class GraphOptimizationEnv:
         return self.get_state()
 
     def get_state(self):
-        """Return current graph state"""
+        """Get the current state of the environment."""
         return self.G
 
     def step(self, action):
-        """Execute action and return new state, reward and completion status
-        Args:
-            action: Action to take (add/remove node)
-        Returns:
-            (new_state, reward, done)
-        """
+        """Perform an action in the environment."""
         node, operation = action
         if operation == "remove_pos":
             self.remove_node(node, "pos")
@@ -199,35 +161,28 @@ class GraphOptimizationEnv:
             self.add_node(node)
 
         reward = self.calculate_reward(operation)
-        if self.min_nodes < len(self.pos_nodes) < self.max_nodes and self.min_nodes < len(self.neg_nodes) < self.max_nodes:
-            if reward < 0:
-                self.revertStep(action)
-                reward = 0
-            elif reward > 0:
-                self.steps += 1
+        self.steps += 1
         done = self.is_done()
-        print(reward)
         return self.get_state(), reward, done
-    
-    def revertStep(self, action):
-        node, operation = action
-        if operation == "remove_pos":
-            self.restore_node(node, "pos")
-        elif operation == "remove_neg":
-            self.restore_node(node, "neg")
-        elif operation == "restore_pos":
-            self.remove_node(node, "pos")
-        elif operation == "restore_neg":
-            self.remove_node(node, "neg")
 
     def remove_node(self, node, category):
-        """Remove node from graph and update node lists"""
+        """Remove a node from the graph."""
         if node in self.G.nodes() and self.G.nodes[node]['category'] == category:
             self.G.remove_node(node)
             self.removed_nodes.add(node)
             if node in self.pos_nodes:
                 self.pos_nodes.remove(node)
             elif node in self.neg_nodes:
+                self.neg_nodes.remove(node)
+
+    def restore_node(self, node, category):
+        """Restore a node to the graph."""
+        if node in self.removed_nodes and self.original_G.nodes[node]['category'] == category:
+            self.G.add_node(node, **self.original_G.nodes[node])
+            self.removed_nodes.remove(node)
+            if self.original_G.nodes[node]['category'] == 'pos':
+                self.pos_nodes.append(node)
+            elif self.original_G.nodes[node]['category'] == 'neg':
                 self.neg_nodes.append(node)
 
             # Restore edges associated with this node
@@ -289,11 +244,7 @@ class GraphOptimizationEnv:
             reward -= (mean_physical_cross - self.previous_physical_cross_mean)
 
         if operation == "add":
-            if (mean_feature_pos < self.previous_feature_pos_mean and 
-                mean_feature_cross > self.previous_feature_cross_mean):
-                reward -= 3
-            else:
-                reward -= 5
+            reward -= 10  # Add penalty for add operation
 
         self.previous_pos_num = len(self.pos_nodes)
         self.previous_neg_num = len(self.neg_nodes)
@@ -310,27 +261,28 @@ class GraphOptimizationEnv:
         return self.steps >= self.max_steps
 
 class QLearningAgent:
-    def __init__(self, env, alpha=0.1, gamma=0.9, epsilon_start=1.0, epsilon_end=0.1, epsilon_decay=0.995, memory_size=10000, batch_size=64,reward_threshold=0.1):
+    def __init__(self, env, alpha=0.1, gamma=0.9, epsilon_start=1.0, epsilon_end=0.1, epsilon_decay=0.995, memory_size=10000, batch_size=64,
+                 reward_threshold=0.1):
         self.env = env
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon_start = epsilon_start
         self.epsilon_end = epsilon_end
-        self.epsilon_decay = epsilon_decay
+        self.epsilon_decay = epsilon_decay  # 添加 epsilon_decay 参数
         self.epsilon = epsilon_start
         self.q_table = defaultdict(float)
         self.best_pos = 100
-        self.best_cross = 0
+        self.best_cross = 0  # Initialize to inf because we aim to minimize the final evaluation metric
         self.best_q_table = None
         self.memory = deque(maxlen=memory_size)
-        self.best_memory = deque(maxlen=memory_size)
+        self.best_memory = deque(maxlen=memory_size)  # 存储最佳经验的memory
         self.batch_size = batch_size
-        self.reward_threshold = reward_threshold
-        self.last_reward = None
-        self.best_reward = -float('inf')
-        self.best_reward_save = -float('inf')
-        self.best_pos_feature_distance = float('inf')
-        self.best_cross_feature_distance = float('inf')
+        self.reward_threshold = reward_threshold  # 添加reward_threshold属性
+        self.last_reward = None  # 添加last_reward属性用于存储上一轮奖励
+        self.best_reward = -float('inf')  # Initialize best reward
+        self.best_reward_save = -float('inf')  # Initialize best reward
+        self.best_pos_feature_distance = float('inf')  # Initialize best pos feature distance
+        self.best_cross_feature_distance = float('inf')  # Initialize best pos feature distance
 
     def update_epsilon(self):
         """Update the epsilon value based on a decay factor."""
@@ -343,32 +295,31 @@ class QLearningAgent:
         if random.random() < self.epsilon:
             action = random.choice(actions)
         else:
-            # Select the action with the highest Q-value
             q_values = {action: self.q_table[(state, action)] for action in actions}
             max_q = max(q_values.values())
             action = random.choice([action for action, q in q_values.items() if q == max_q])
 
+        #print(self.epsilon, action)
         return action
 
     def get_possible_actions(self, state):
         """Get the possible actions for the current state."""
         actions = []
-        
-        # Get restore and remove actions for positive and negative nodes
+
         restore_pos_actions = [
-            (node, "restore_pos") 
+            (node, "restore_pos")
             for node in self.env.removed_nodes
             if node in self.env.original_G and self.env.original_G.nodes[node].get('category') == 'pos'
         ]
         restore_neg_actions = [
             (node, "restore_neg")
-            for node in self.env.removed_nodes 
+            for node in self.env.removed_nodes
             if node in self.env.original_G and self.env.original_G.nodes[node].get('category') == 'neg'
         ]
         remove_pos_actions = [
             (node, "remove_pos")
             for node in state.nodes()
-            if node in self.env.original_G and self.env.original_G.nodes[node].get('category') == 'pos' 
+            if node in self.env.original_G and self.env.original_G.nodes[node].get('category') == 'pos'
         ]
         remove_neg_actions = [
             (node, "remove_neg")
@@ -379,14 +330,17 @@ class QLearningAgent:
         pos_nodes_count = len(self.env.pos_nodes)
         neg_nodes_count = len(self.env.neg_nodes)
 
-        # Only add actions when node counts are within bounds
+        #(pos_nodes_count, neg_nodes_count)
+
+        # 只在范围之间添加 add 动作
         if self.env.min_nodes < pos_nodes_count < self.env.max_nodes and self.env.min_nodes < neg_nodes_count < self.env.max_nodes:
             actions.extend(restore_pos_actions)
             actions.extend(restore_neg_actions)
             actions.extend(remove_pos_actions)
             actions.extend(remove_neg_actions)
+            actions.extend([(node, "add") for node in range(state.number_of_nodes(), state.number_of_nodes() + 10)])
         else:
-            # When out of bounds, only allow restore/remove to get back in bounds
+            # 超出范围时，只允许 restore 和 remove 操作
             if pos_nodes_count <= self.env.min_nodes:
                 actions.extend(restore_pos_actions)
             elif pos_nodes_count >= self.env.max_nodes:
@@ -396,6 +350,15 @@ class QLearningAgent:
                 actions.extend(restore_neg_actions)
             elif neg_nodes_count >= self.env.max_nodes:
                 actions.extend(remove_neg_actions)
+
+        # 保证 remove_pos 和 remove_neg 的概率一致
+        if len(remove_pos_actions) < len(remove_neg_actions):
+            remove_neg_actions = random.sample(remove_neg_actions, len(remove_pos_actions))
+        elif len(remove_neg_actions) < len(remove_pos_actions):
+            remove_pos_actions = random.sample(remove_pos_actions, len(remove_neg_actions))
+
+        actions.extend(remove_pos_actions)
+        actions.extend(remove_neg_actions)
 
         return actions
 
@@ -424,6 +387,157 @@ class QLearningAgent:
         for state, action, reward, next_state in batch:
             self.update_q_table(state, action, reward, next_state)
 
+    def train(self, episodes, output_path, base_dir, file_prefixes, max_steps):
+        """Train the Q-learning agent."""
+        rewards = []
+        image_size = 560
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        os.makedirs(output_path, exist_ok=True)
+        start_time = time.time()
+        for episode in range(episodes):
+            selected_prefix = random.choice(list(file_prefixes))
+            print(f"Episode {episode + 1}/{episodes}, Selected file prefix: {selected_prefix}")
+
+            feature_file = os.path.join(base_dir, f"{selected_prefix}.png_features.pt")
+            pos_file = os.path.join(base_dir, f"{selected_prefix}.png_initial_indices_pos.pt")
+            neg_file = os.path.join(base_dir, f"{selected_prefix}.png_initial_indices_neg.pt")
+
+            if not (os.path.exists(feature_file) and os.path.exists(pos_file) and os.path.exists(neg_file)):
+                print(f"Required files not found for prefix {selected_prefix}, skipping this episode.")
+                continue
+
+            features = torch.load(feature_file).to(device)
+            positive_indices = torch.load(pos_file).to(device)
+            negative_indices = torch.load(neg_file).to(device)
+
+            positive_indices = torch.unique(positive_indices).to(device)
+            negative_indices = torch.unique(negative_indices).to(device)
+
+            set1 = set(positive_indices.tolist())
+            set2 = set(negative_indices.tolist())
+
+            intersection = set1.intersection(set2)
+            positive_indices = torch.tensor([x for x in positive_indices.cpu().tolist() if x not in intersection]).cuda()
+            negative_indices = torch.tensor([x for x in negative_indices.cpu().tolist() if x not in intersection]).cuda()
+            if positive_indices.numel() == 0 or negative_indices.numel() == 0:
+                continue
+            feature_pos_distances, feature_cross_distances, physical_pos_distances, physical_neg_distances, physical_cross_distances = calculate_distances(
+                features, positive_indices, negative_indices, image_size, device)
+
+            feature_pos_edge = convert_to_edges(positive_indices, positive_indices, feature_pos_distances)
+            physical_pos_edge = convert_to_edges(positive_indices, positive_indices, physical_pos_distances)
+            physical_neg_edge = convert_to_edges(negative_indices, negative_indices, physical_neg_distances)
+            feature_cross_edge = convert_to_edges(positive_indices, negative_indices, feature_cross_distances)
+            physical_cross_edge = convert_to_edges(positive_indices, negative_indices, physical_cross_distances)
+
+            G = nx.MultiGraph()
+            G.add_nodes_from(positive_indices.cpu().numpy(), category='pos')
+            G.add_nodes_from(negative_indices.cpu().numpy(), category='neg')
+
+            G.add_weighted_edges_from(feature_pos_edge, weight='feature_pos')
+            G.add_weighted_edges_from(physical_pos_edge, weight='physical_pos')
+            G.add_weighted_edges_from(physical_neg_edge, weight='physical_neg')
+            G.add_weighted_edges_from(feature_cross_edge, weight='feature_cross')
+            G.add_weighted_edges_from(physical_cross_edge, weight='physical_cross')
+
+            self.env = GraphOptimizationEnv(G, max_steps)
+            state = self.env.reset()
+            done = False
+            total_reward = 0
+
+            normalized_reward = (self.best_reward - 0) / (5 - 0)
+
+            #print(normalize_distances())
+
+            if self.best_reward<0:
+                self.epsilon=self.epsilon_start
+            elif self.best_reward>=5:
+                self.epsilon=self.epsilon_end
+            else:
+                self.epsilon = 1-normalized_reward  # 每个 epoch 开始时重置 epsilon
+            print(self.epsilon)
+            while not done:
+                action = self.get_action(state)
+                next_state, reward, done = self.env.step(action)
+                self.memory.append((state, action, reward, next_state))
+                self.update_q_table(state, action, reward, next_state)
+                self.replay()
+                state = next_state
+                total_reward += reward
+                self.update_epsilon()  # Update epsilon based on decay factor
+
+            # 使用最佳表现的经验进行回放
+
+            print(total_reward,self.best_reward)
+
+            if total_reward > self.best_reward:
+
+                self.best_reward = total_reward
+                self.best_memory = deque(self.memory, maxlen=self.memory.maxlen)  # 更新最佳经验的memory
+                self.replay_best()
+
+            rewards.append(total_reward)
+            self.save_results(episode, total_reward, output_path, selected_prefix)
+            self.last_reward = total_reward  # 更新last_reward
+
+            # Calculate final evaluation metric
+            mean_feature_pos = np.mean(list(nx.get_edge_attributes(self.env.G, 'feature_pos').values()))
+            mean_feature_cross = np.mean(list(nx.get_edge_attributes(self.env.G, 'feature_cross').values()))
+            print(f"Episode {episode + 1}/{episodes}, Reward: {total_reward}, Final pos: {mean_feature_pos}, Final cross: {mean_feature_cross}")
+
+            elapsed_time = time.time() - start_time
+            estimated_total_time = elapsed_time * (episodes / (episode + 1))
+            remaining_time = estimated_total_time - elapsed_time
+            print(f"Elapsed Time: {timedelta(seconds=int(elapsed_time))}, Estimated Total Time: {timedelta(seconds=int(estimated_total_time))}, Remaining Time: {timedelta(seconds=int(remaining_time))}")
+
+            if mean_feature_pos < self.best_pos and mean_feature_cross > self.best_cross:  # Assuming lower is better for evaluation metric
+                print('Update!')
+                self.best_pos = mean_feature_pos
+                self.best_cross = mean_feature_cross
+                self.best_q_table = self.q_table.copy()
+                self.save_best_q_table(output_path)
+
+            # 保存奖励最大的模型
+            if total_reward > self.best_reward_save:
+                self.best_reward_save = total_reward
+                self.save_best_model(output_path, 'best_reward_model.pkl')
+
+            # 保存pos特征距离最小的模型
+            if mean_feature_pos < self.best_pos_feature_distance:
+                self.best_pos_feature_distance = mean_feature_pos
+                self.save_best_model(output_path, 'best_pos_feature_distance_model.pkl')
+
+            if mean_feature_cross > self.best_cross_feature_distance:
+                self.best_cross_feature_distance = mean_feature_cross
+                self.save_best_model(output_path, 'best_cross_feature_distance_model.pkl')
+
+            # 输出保留的正点和负点数量
+            final_pos_count = len(self.env.pos_nodes)
+            final_neg_count = len(self.env.neg_nodes)
+            print(f"Episode {episode + 1}: Final positive nodes count: {final_pos_count}, Final negative nodes count: {final_neg_count}")
+
+        return rewards
+
+    def save_results(self, episode, reward, output_path, prefix):
+        """Save the results of an episode."""
+        G_state = self.env.get_state()
+        pos_nodes = [node for node, data in G_state.nodes(data=True) if data['category'] == 'pos']
+        neg_nodes = [node for node, data in G_state.nodes(data=True) if data['category'] == 'neg']
+
+        with open(f"{output_path}/{prefix}_rewards.txt", "a") as f:
+            f.write(f"Episode {episode}: Reward: {reward}\n")
+
+    def save_best_q_table(self, output_path):
+        """Save the best Q-table."""
+        with open(f"{output_path}/best_q_table.pkl", "wb") as f:
+            torch.save(self.best_q_table, f)
+
+    def save_best_model(self, output_path, filename):
+        """Save the best model based on the highest reward."""
+        with open(f"{output_path}/{filename}", "wb") as f:
+            torch.save(self.q_table, f)
+        print(f"Best model saved with reward: {self.best_reward}")
+
 def show_mask(mask,ax, random_color=False):
 
     color = np.array([50/255, 120/255, 255/255, 0.8])
@@ -432,19 +546,19 @@ def show_mask(mask,ax, random_color=False):
     ax.imshow(mask_image)
 
 def sample_points(mask_path, new_size=(224, 224), num_positive=10, num_negative=10):
-    """Randomly sample positive and negative point coordinates"""
+    """随机采样正点和负点坐标"""
     mask = Image.open(mask_path).convert("L").resize(new_size)
     mask_array = np.array(mask)
 
-    # Get coordinates of white (positive) and black (negative) points
+    # 获取白色（正点）和黑色（负点）的坐标
     positive_points = np.column_stack(np.where(mask_array == 255))
     negative_points = np.column_stack(np.where(mask_array == 0))
 
-    # If the number of positive or negative points is less than the specified number, use the actual number
+    # 如果正点或负点的数量不足指定的数量，使用实际数量
     num_positive = min(num_positive, len(positive_points))
     num_negative = min(num_negative, len(negative_points))
 
-    # Randomly sample positive and negative points
+    # 随机采样正点和负点
     sampled_positive_points = positive_points[np.random.choice(len(positive_points), num_positive, replace=False)]
     sampled_negative_points = negative_points[np.random.choice(len(negative_points), num_negative, replace=False)]
 
@@ -455,7 +569,7 @@ def sample_points(mask_path, new_size=(224, 224), num_positive=10, num_negative=
 
 
 def calculate_block_index(center_points, size, block_size=14):
-    """Calculate block index based on center point coordinates"""
+    """根据中心点坐标计算块索引"""
     indices = []
     for (y, x) in center_points:
         row = y // block_size
@@ -463,60 +577,3 @@ def calculate_block_index(center_points, size, block_size=14):
         index = row * (size // block_size) + col
         indices.append(index)
     return indices
-
-def is_point_in_box(point, bbox):
-    """
-    Check if a point is inside a bounding box
-    
-    Args:
-        point (list): Point coordinates in [x, y] format
-        bbox (dict): Bounding box information containing min_x, min_y, max_x, max_y
-    
-    Returns:
-        bool: Whether the point is inside the bounding box
-    """
-    x, y = point
-    return (bbox['min_x'] <= x <= bbox['max_x'] and 
-            bbox['min_y'] <= y <= bbox['max_y'])
-
-def get_box_node_indices(G, bbox):
-    """
-    Get node indices inside and outside the bounding box
-    
-    Args:
-        G (networkx.Graph): Graph structure
-        bbox (dict): Bounding box information containing min_x, min_y, max_x, max_y
-    
-    Returns:
-        tuple: (inside_indices, outside_indices, 
-                inside_pos_indices, outside_pos_indices,
-                inside_neg_indices, outside_neg_indices)
-    """
-    inside_indices = []
-    outside_indices = []
-    inside_pos_indices = []
-    outside_pos_indices = []
-    inside_neg_indices = []
-    outside_neg_indices = []
-    
-    for node in G.nodes():
-        # Calculate the center point coordinates of the node
-        point = calculate_center_points([node], 560)[0]
-        
-        # Check if the point is inside the bounding box
-        if is_point_in_box(point, bbox):
-            inside_indices.append(node)
-            if G.nodes[node]['category'] == 'pos':
-                inside_pos_indices.append(node)
-            else:
-                inside_neg_indices.append(node)
-        else:
-            outside_indices.append(node)
-            if G.nodes[node]['category'] == 'pos':
-                outside_pos_indices.append(node)
-            else:
-                outside_neg_indices.append(node)
-    
-    return (inside_indices, outside_indices,
-            inside_pos_indices, outside_pos_indices,
-            inside_neg_indices, outside_neg_indices)
