@@ -44,7 +44,7 @@ python generate_initial_prompts.py
 
 ### Train PPO
 ```
-python train_GPOA.py
+python train_PPO.py
 ```
 
 ### Optimize PPO with feature matching
