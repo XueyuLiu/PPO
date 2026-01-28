@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 ```
 
-[The model weights]([https://github.com/facebookresearch/dinov2](https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing))
+[The model weights](https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing)
 
 ### Datasets
     ../                          # parent directory
