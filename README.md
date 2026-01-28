@@ -24,7 +24,7 @@ Powered by extensive curated training data, the Segment Anything Model (SAM) dem
 ```
 pip install -r requirements.txt
 
-The model weight: https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing
+The model weights([https://github.com/facebookresearch/dinov2](https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing))
 ```
 
 
