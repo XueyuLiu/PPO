@@ -26,7 +26,9 @@ pip install -r requirements.txt
 
 ```
 
-[The model weights](https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing)
+> [!IMPORTANT]
+> **Update:** We have released new model weights! 
+> 📥 Download: [**The model weights**](https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing)
 
 ### Datasets
     ../                          # parent directory
