@@ -1,67 +1,40 @@
 <div align="center">
 
-<h1> Plug-and-Play PPO: An Adaptive Point Prompt Optimizer Making SAM Greater </h1>
+<h1>Plug-and-Play PPO: An Adaptive Point Prompt Optimizer Making SAM Greater</h1>
+
+[![CVPR 2025](https://img.shields.io/badge/CVPR-2025-b31b1b.svg)](https://cvpr.thecvf.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
+
+<a href="https://youtu.be/LKievqcEsJA">
+  <img src="Display/Video.gif" alt="Video Demo" width="80%">
+</a>
 
 </div>
 
-
-
-<div align="center">
-  <a href="https://youtu.be/LKievqcEsJA">
-    <img src="Display/Video.gif" alt="Video Demo">
-  </a>
-</div>
-
-
-##  Description
-Powered by extensive curated training data, the Segment Anything Model (SAM) demonstrates impressive generalization capabilities in open-world scenarios, effectively guided by user-provided prompts.However, the class-agnostic characteristic of SAM renders its segmentation accuracy highly dependent on prompt quality. In this paper, we propose a novel Plug-and-Play dual-space Point Prompt Optimizer (PPO) designed to enhance prompt distribution through deep reinforcement learning (DRL)-based heterogeneous graph optimization. PPO optimizes initial prompts for any task without requiring additional training, thereby improving SAM’s downstream segmentation performance. Specifically, PPO constructs a dual-space heterogeneous graph, leveraging the robust feature-matching capabilities of a foundational pre-trained model to create internal feature and physical distance matrices. A DRL policy network iteratively refines the distribution of prompt points, optimizing segmentation predictions. In conclusion, PPO redefines the prompt optimization problem as a heterogeneous graph optimization task, using DRL to construct an effective, plug-and-play prompt optimizer. This approach holds potential for broader applications across diverse segmentation tasks and provides a promising solution for point prompt optimization.
-### 🚀🚀This work has been accepted by CVPR2025!🚀🚀
-
-## Usage 
-### Setup 
-- Cuda 12.7
-- Python 3.9.20
-```
-pip install -r requirements.txt
-
-```
+## 📢 News
 
 > [!IMPORTANT]
-> **Update:** We have released new model weights! 
-> 📥 Download: [**The model weights**](https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing)
+> **Exciting News:** This work has been accepted by **CVPR 2025**! 🚀
+>
+> **Update:** We have officially released the pre-trained model weights.
+> 📥 **Download:** [**The model weights**](https://drive.google.com/file/d/1elAw4iagw4TYHsD0zWjJZnn9vJUHcZ0H/view?usp=sharing)
 
-### Datasets
-    ../                          # parent directory
-    ├── ./data                   # data path
-    │   ├── reference_image      # the one-shot reference image
-    │   ├── reference_mask       # the one-shot reference mask
-    │   ├── target_image         # testing images
-    │   ├── initial_indices      # initial prompt indices
-    │   ├── optimized_indices    # optimized prompt indices
+## 📝 Description
 
+Powered by extensive curated training data, the **Segment Anything Model (SAM)** demonstrates impressive generalization capabilities in open-world scenarios, effectively guided by user-provided prompts. However, the class-agnostic characteristic of SAM renders its segmentation accuracy highly dependent on prompt quality.
 
+In this paper, we propose a novel **Plug-and-Play dual-space Point Prompt Optimizer (PPO)** designed to enhance prompt distribution through **Deep Reinforcement Learning (DRL)**-based heterogeneous graph optimization. PPO optimizes initial prompts for any task without requiring additional training, thereby improving SAM’s downstream segmentation performance.
 
-### Generate initial prompt
-```
-python generate_initial_prompts.py
-```
+**Key Features:**
+- **Dual-Space Heterogeneous Graph:** Leverages robust feature-matching capabilities of foundation models to create internal feature and physical distance matrices.
+- **DRL-Based Optimization:** A policy network iteratively refines the distribution of prompt points.
+- **Plug-and-Play:** Optimizes segmentation predictions for diverse tasks without re-training SAM.
 
-### Train PPO
-```
-python train_PPO.py
-```
+## 🛠️ Usage
 
-### Optimize PPO with feature matching
-```
-python main_FM.py
-```
-### Optimization results for different datasets
-<div align="center">
-  <img width="1000" alt="ablation" src="Display/Results.png">
-</div>
+### Setup
+Ensure you have **CUDA 12.7** and **Python 3.9.20** installed.
 
-
-
-
-## Acknowledgement
-Thanks [DINOv2](https://github.com/facebookresearch/dinov2), [SAM](https://github.com/facebookresearch/segment-anything), [GBMSeg](https://github.com/SnowRain510/GBMSeg). for serving as building blocks of PPO.
+```bash
+pip install -r requirements.txt
